@@ -1,0 +1,34 @@
+name: Test_EC_MSEC_pretrained_over_expert_e_mlr.yml
+model_type: MultiExposureCorrectionModel
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 0
+
+datasets:
+  test:
+    name: MultiExpoCorr
+    type: MultiExpoPairedImageDataset
+    dataroot_gt: datasets/MultiExposure_dataset/testing/expert_e_testing_set/
+    dataroot_lq: datasets/MultiExposure_dataset/testing/INPUT_IMAGES_OVER/
+    io_backend:
+      type: disk
+
+# network structures
+network_g:
+  type: MEC_V022
+  window_size: 8
+
+# path
+path:
+  pretrain_network_g: ./pretrained_models/net_g_22500.pth
+  strict_load_g: false
+  param_key_g: 'params_ema'
+
+# validation settings
+val:
+  save_img: true
+
+  metrics:
+    psnr:
+      type: calculate_ec_psnr
+    ssim:
+      type: calculate_ec_ssim
