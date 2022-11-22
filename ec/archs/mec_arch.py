@@ -23,6 +23,12 @@ def drop_path(x, drop_prob: float = 0., training: bool = False):
 
 
 class HIN(nn.Module):
+    """Half Instance Normalization module .
+        Args:
+            in_size (int): Channel number of input features.
+            out_size (int): Channel number of output features.
+        """
+
     def __init__(self, in_size, out_size):
         super(HIN, self).__init__()
         self.conv_1 = nn.Conv2d(in_size, out_size, kernel_size=3, padding=1, bias=True)
@@ -41,7 +47,7 @@ class HIN(nn.Module):
 
 
 class ChannelAttention(nn.Module):
-    """Channel attention used in SCAM.
+    """Channel attention.
     Args:
         num_feat (int): Channel number of intermediate features.
         squeeze_factor (int): Channel squeeze factor. Default: 16.
@@ -269,8 +275,8 @@ class SwinTransformerBlock(nn.Module):
                  shift_size=0,
                  compress_ratio=3,
                  squeeze_factor=30,
-                 conv_scale=0.01,
-                 lcf_scale=0.01,
+                 cab_scale=0.01,
+                 hin_scale=0.01,
                  mlp_ratio=4.,
                  qkv_bias=True,
                  qk_scale=None,
@@ -302,9 +308,9 @@ class SwinTransformerBlock(nn.Module):
             attn_drop=attn_drop,
             proj_drop=drop)
 
-        self.conv_scale = conv_scale
+        self.cab_scale = cab_scale
         self.conv_block = CAB(num_feat=dim, compress_ratio=compress_ratio, squeeze_factor=squeeze_factor)
-        self.lcf_scale = lcf_scale
+        self.hin_scale = hin_scale
         self.hin = HIN(in_size=dim, out_size=dim)
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -350,13 +356,13 @@ class SwinTransformerBlock(nn.Module):
 
         x_permute = x.permute(0, 3, 1, 2)
 
-        # Conv_X
+        # CAB
         conv_x = self.conv_block(x_permute)
         conv_x = conv_x.permute(0, 2, 3, 1).contiguous().view(b, h * w, c)
 
-        # lcf
-        lcf = self.hin(x_permute)
-        lcf = lcf.permute(0, 2, 3, 1).contiguous().view(b, h * w, c)
+        # HIN
+        hin = self.hin(x_permute)
+        hin = hin.permute(0, 2, 3, 1).contiguous().view(b, h * w, c)
 
         # cyclic shift
         if self.shift_size > 0:
@@ -387,9 +393,9 @@ class SwinTransformerBlock(nn.Module):
         x = x.view(b, h * w, c)
 
         # FFN
-        x = shortcut + self.drop_path(x) + conv_x * self.conv_scale
+        x = shortcut + self.drop_path(x) + conv_x * self.cab_scale
         x = x + self.drop_path(self.mlp(self.norm2(x)))
-        x = x + self.lcf_scale * lcf
+        x = x + self.hin_scale * hin
 
         return x
 
@@ -714,6 +720,13 @@ class Upsample(nn.Sequential):
 
 
 class Attention(nn.Module):
+    """Self-Calibrated Attention Module.
+
+    Args:
+        num_feat (int): Channel number of intermediate features.
+    """
+
+
     def __init__(self, nf):
         super(Attention, self).__init__()
         self.conv = nn.Sequential(
@@ -813,7 +826,7 @@ class MEC_CIT(nn.Module):
         for layer in self.layers:
             x = layer(x, x_size)
 
-        x = self.norm(x)  # b seq_len c
+        x = self.norm(x)
         x = self.patch_unembed(x, x_size)
 
         return x

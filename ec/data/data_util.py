@@ -86,3 +86,13 @@ def tensor2numpy(tensor):
     img_np = np.transpose(img_np[[2, 1, 0], :, :], (1, 2, 0))  # HWC, BGR
     return img_np.astype(np.float32)
 
+
+def imwrite_gt(img, img_path, auto_mkdir=True):
+    if auto_mkdir:
+        dir_name = os.path.abspath(os.path.dirname(img_path))
+        os.makedirs(dir_name, exist_ok=True)
+
+    img = img.clip(0, 1.0)
+    uint8_image = np.round(img * 255.0).astype(np.uint8)
+    cv2.imwrite(img_path, uint8_image)
+    return None

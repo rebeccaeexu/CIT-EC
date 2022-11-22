@@ -7,7 +7,7 @@ from basicsr.models.sr_model import SRModel
 from basicsr.metrics import calculate_metric
 from basicsr.utils import get_root_logger
 
-from ec.data.data_util import tensor2numpy, imwrite_hdr, imwrite_gt
+from ec.data.data_util import tensor2numpy, imwrite_gt
 
 
 @MODEL_REGISTRY.register()

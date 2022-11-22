@@ -14,12 +14,12 @@ datasets:
 
 # network structures
 network_g:
-  type: MEC_V022
+  type: MEC_CIT
   window_size: 8
 
 # path
 path:
-  pretrain_network_g: ./pretrained_models/net_g_22500.pth
+  pretrain_network_g: ./pretrained_models/CIT-EC_pretrained.pth
   strict_load_g: false
   param_key_g: 'params_ema'
 
