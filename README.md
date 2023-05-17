@@ -39,7 +39,9 @@ python scripts/generate_meta_info_MSEC.py
 
 ### How to Test
 
-Example: Testing on the MSEC dataset with images retouched by expert-a as ground truth
+* Download the pre-trained model
+
+* Example: Testing on the MSEC dataset with images retouched by expert-a as ground truth
 
 ```python
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python test.py -opt options/test/Test_EC_MSEC_pretrained_over_expert_a_mlr.yml
